@@ -9,8 +9,7 @@ void main()
 {
   if ( u_time <= a_lifetime )
   {
-    gl_Position.xyz = a_startPosition +
-                      (u_time * a_endPosition);
+    gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
     gl_Position.xyz += u_centerPosition;
     gl_Position.w = 1.0;
   }
