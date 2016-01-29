@@ -95,7 +95,7 @@ public class Renderer implements GLSurfaceView.Renderer  {
     private final int PARTICLE_SIZE = 7;
 
     private final float[] mParticleData = new float[NUM_PARTICLES * PARTICLE_SIZE];
-
+    private ParticleSystem snow;
     /**
      * Initialize the model data.
      */
@@ -136,6 +136,7 @@ public class Renderer implements GLSurfaceView.Renderer  {
 
         final int vertexShaderHandle = ShaderHelper.compileShader(GLES20.GL_VERTEX_SHADER, vertexShader);
         final int fragmentShaderHandle = ShaderHelper.compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentShader);
+        snow = new ParticleSystem(NUM_PARTICLES);
 
         mProgramHandle = ShaderHelper.createAndLinkProgram(vertexShaderHandle, fragmentShaderHandle, new String[]{"a_Position", "a_Color"});
 
@@ -160,9 +161,9 @@ public class Renderer implements GLSurfaceView.Renderer  {
             mParticleData[i * 7 + 0] = generator.nextFloat();
 
             // End position of particle
-            mParticleData[i * 7 + 1] = generator.nextFloat() * 2.0f - 1.0f;
-            mParticleData[i * 7 + 2] = generator.nextFloat() * 2.0f - 1.0f;
-            mParticleData[i * 7 + 3] = generator.nextFloat() * 2.0f - 1.0f;
+            mParticleData[i * 7 + 1] = snow.particles[i].position[0];//generator.nextFloat() * 2.0f - 1.0f;
+            mParticleData[i * 7 + 2] = snow.particles[i].position[1];//generator.nextFloat() * 2.0f - 1.0f;
+            mParticleData[i * 7 + 3] = snow.particles[i].position[2];//generator.nextFloat() * 2.0f - 1.0f;
 
             // Start position of particle
             mParticleData[i * 7 + 4] = generator.nextFloat() * 0.25f - 0.125f;
@@ -183,20 +184,20 @@ public class Renderer implements GLSurfaceView.Renderer  {
     public void onSurfaceChanged(GL10 glUnused, int width, int height)
     {
         // Set the OpenGL viewport to the same size as the surface.
-//        GLES20.glViewport(0, 0, width, height);
-//
-//        // Create a new perspective projection matrix. The height will stay the same
-//        // while the width will vary as per aspect ratio.
-//        final float ratio = (float) width / height;
-//        final float left = -ratio;
-//        final float right = ratio;
-//        final float bottom = -1.0f;
-//        final float top = 1.0f;
-//        final float near = 1.0f;
-//        final float far = 10.0f;
-//        mWidth = width;
-//        mHeight = height;
-//        Matrix.frustumM(mProjectionMatrix, 0, left, right, bottom, top, near, far);
+        GLES20.glViewport(0, 0, width, height);
+
+        // Create a new perspective projection matrix. The height will stay the same
+        // while the width will vary as per aspect ratio.
+        final float ratio = (float) width / height;
+        final float left = -ratio;
+        final float right = ratio;
+        final float bottom = -1.0f;
+        final float top = 1.0f;
+        final float near = 1.0f;
+        final float far = 10.0f;
+        mWidth = width;
+        mHeight = height;
+        Matrix.frustumM(mProjectionMatrix, 0, left, right, bottom, top, near, far);
 
         mWidth = width;
         mHeight = height;
@@ -241,19 +242,20 @@ public class Renderer implements GLSurfaceView.Renderer  {
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
 
         // Bind the texture
-        GLES20.glActiveTexture ( GLES20.GL_TEXTURE0 );
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureId);
         GLES20.glEnable(GLES20.GL_TEXTURE_2D);
 
-        // Set the sampler texture unit to 0
-        GLES20.glUniform1i ( mSamplerLoc, 0 );
+        mParticles = ByteBuffer.allocateDirect(mParticleData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mParticles.put(mParticleData).position(0);
 
+        // Set the sampler texture unit to 0
+        GLES20.glUniform1i(mSamplerLoc, 0);
         GLES20.glDrawArrays(GLES20.GL_POINTS, 0, NUM_PARTICLES);
 
     }
 
-    private void update()
-    {
+    private void update() {
         if (mLastTime == 0)
             mLastTime = SystemClock.uptimeMillis();
         long curTime = SystemClock.uptimeMillis();
@@ -263,8 +265,7 @@ public class Renderer implements GLSurfaceView.Renderer  {
 
         mTime += deltaTime;
 
-        if ( mTime >= 1.0f )
-        {
+        if (mTime >= 1.0f) {
             Random generator = new Random();
             float[] centerPos = new float[3];
             float[] color = new float[4];
@@ -272,11 +273,11 @@ public class Renderer implements GLSurfaceView.Renderer  {
             mTime = 0.0f;
 
             // Pick a new start location and color
-            centerPos[0] = generator.nextFloat() * 1.0f - 0.5f;
-            centerPos[1] = generator.nextFloat() * 1.0f - 0.5f;
-            centerPos[2] = generator.nextFloat() * 1.0f - 0.5f;
+//            centerPos[0] = generator.nextFloat() * 1.0f - 0.5f;
+//            centerPos[1] = generator.nextFloat() * 1.0f - 0.5f;
+//            centerPos[2] = generator.nextFloat() * 1.0f - 0.5f;
 
-            GLES20.glUniform3f ( mCenterPositionLoc, centerPos[0], centerPos[1], centerPos[2]);
+            //GLES20.glUniform3f ( mCenterPositionLoc, centerPos[0], centerPos[1], centerPos[2]);
 
             // Random color
             color[0] = generator.nextFloat() * 0.5f + 0.5f;
@@ -284,7 +285,15 @@ public class Renderer implements GLSurfaceView.Renderer  {
             color[2] = generator.nextFloat() * 0.5f + 0.5f;
             color[3] = 0.5f;
 
-            GLES20.glUniform4f ( mColorLoc, color[0], color[1], color[2], color[3] );
+            GLES20.glUniform4f(mColorLoc, color[0], color[1], color[2], color[3]);
+        }
+        snow.update(deltaTime);
+        for (int i = 0; i < NUM_PARTICLES; i++)
+        {
+           mParticleData[i * 7 + 0] = snow.particles[i].timeLived;
+           mParticleData[i * 7 + 1] = snow.particles[i].position[0];
+           mParticleData[i * 7 + 2] = snow.particles[i].position[1];
+           mParticleData[i * 7 + 3] = snow.particles[i].position[2];
         }
 
         // Load uniform time variable

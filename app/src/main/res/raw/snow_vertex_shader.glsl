@@ -5,17 +5,12 @@ attribute float a_lifetime;
 attribute vec3 a_startPosition;
 attribute vec3 a_endPosition;
 varying float v_lifetime;
+varying float v_velocity;
 void main()
 {
-  if ( u_time <= a_lifetime )
-  {
-    gl_Position.xyz = a_startPosition + (u_time * a_endPosition);
-    gl_Position.xyz += u_centerPosition;
+    //gl_Position.y = a_endPosition.y;
+    gl_Position.xyz = a_endPosition;
     gl_Position.w = 1.0;
-  }
-  else
-    gl_Position = vec4( -1000, -1000, 0, 0 );
-    v_lifetime = 1.0 - ( u_time / a_lifetime );
-    v_lifetime = clamp ( v_lifetime, 0.0, 1.0 );
-    gl_PointSize = ( v_lifetime * v_lifetime ) * 40.0;
+    gl_PointSize = 30;
+    v_lifetime = a_lifetime;
 }
