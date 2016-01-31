@@ -1,5 +1,7 @@
 package com.mordecai.renderer;
 
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.util.Log;
 
 /**
@@ -7,14 +9,14 @@ import android.util.Log;
  */
 public class Particle {
     public float[] velocity;
-    public float acceleration;
+    public float[] acceleration;
     public float[] position;
     public float timeLived;
     public boolean isDead;
     public float lifeTime;
     public float floor;
 
-    public Particle(float[] position, float[] velocity, float acceleration, float decay, float lifeTime)
+    public Particle(float[] position, float[] velocity, float[] acceleration, float decay, float lifeTime)
     {
         this.position = position;
         this.velocity = velocity;
@@ -34,7 +36,8 @@ public class Particle {
                 this.position[0] += velocity[0];
                 this.position[1] += velocity[1];
                 this.position[2] += velocity[2];
-                velocity[1] += acceleration * time;
+                velocity[0] += acceleration[0] * time;
+                velocity[1] += acceleration[1] * time;
             }
             timeLived += time;
         }

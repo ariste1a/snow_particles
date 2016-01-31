@@ -3,10 +3,15 @@ package com.mordecai.renderer;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.os.SystemClock;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
+
 import android.util.Log;
 
 import java.io.InputStream;
@@ -22,8 +27,10 @@ import javax.microedition.khronos.opengles.GL10;
  * Created by Mordecai on 10/17/2015.
  * http://opengles-book-samples.googlecode.com/svn/!svn/bc/49/trunk/Android/Ch13_ParticleSystem/src/com/openglesbook/particlesystem/ParticleSystemRenderer.java
  */
-public class Renderer implements GLSurfaceView.Renderer  {
-    /** Used for debug logs. */
+public class Renderer implements GLSurfaceView.Renderer {
+    /**
+     * Used for debug logs.
+     */
     private static final String TAG = "LessonFiveRenderer";
 
     private final Context mActivityContext;
@@ -40,31 +47,49 @@ public class Renderer implements GLSurfaceView.Renderer  {
      */
     private float[] mViewMatrix = new float[16];
 
-    /** Store the projection matrix. This is used to project the scene onto a 2D viewport. */
+    /**
+     * Store the projection matrix. This is used to project the scene onto a 2D viewport.
+     */
     private float[] mProjectionMatrix = new float[16];
 
-    /** Allocate storage for the final combined matrix. This will be passed into the shader program. */
+    /**
+     * Allocate storage for the final combined matrix. This will be passed into the shader program.
+     */
     private float[] mMVPMatrix = new float[16];
 
-    /** This will be used to pass in the transformation matrix. */
+    /**
+     * This will be used to pass in the transformation matrix.
+     */
     private int mMVPMatrixHandle;
 
-    /** This will be used to pass in model position information. */
+    /**
+     * This will be used to pass in model position information.
+     */
     private int mPositionHandle;
 
-    /** This will be used to pass in model color information. */
+    /**
+     * This will be used to pass in model color information.
+     */
     private int mColorHandle;
 
-    /** How many bytes per float. */
+    /**
+     * How many bytes per float.
+     */
     private final int mBytesPerFloat = 4;
 
-    /** Size of the position data in elements. */
+    /**
+     * Size of the position data in elements.
+     */
     private final int mPositionDataSize = 3;
 
-    /** Size of the color data in elements. */
+    /**
+     * Size of the color data in elements.
+     */
     private final int mColorDataSize = 4;
 
-    /** This is a handle to our cube shading program. */
+    /**
+     * This is a handle to our cube shading program.
+     */
     private int mProgramHandle;
 
     // Attribute locations
@@ -95,29 +120,28 @@ public class Renderer implements GLSurfaceView.Renderer  {
     private final int PARTICLE_SIZE = 7;
 
     private final float[] mParticleData = new float[NUM_PARTICLES * PARTICLE_SIZE];
+    private SensorManager senSensorManager;
+    private Sensor sensor;
     private ParticleSystem snow;
+
     /**
      * Initialize the model data.
      */
-    public Renderer(final Context activityContext)
-    {
+    public Renderer(final Context activityContext) {
         mActivityContext = activityContext;
 
     }
 
-    protected String getVertexShader()
-    {
+    protected String getVertexShader() {
         return RawResourceReader.readTextFileFromRawResource(mActivityContext, R.raw.snow_vertex_shader);
     }
 
-    protected String getFragmentShader()
-    {
+    protected String getFragmentShader() {
         return RawResourceReader.readTextFileFromRawResource(mActivityContext, R.raw.snow_fragment_shader);
     }
 
     @Override
-    public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
-    {
+    public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
 //        // Set the background clear color to black.
 //        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 //
@@ -142,21 +166,22 @@ public class Renderer implements GLSurfaceView.Renderer  {
 
         // Get the attribute locations
         mLifetimeLoc = GLES20.glGetAttribLocation(mProgramHandle, "a_lifetime");
-        mStartPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "a_startPosition" );
-        mEndPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "a_endPosition" );
+        mStartPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "a_startPosition");
+        mEndPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "a_endPosition");
 
         // Get the uniform locations
-        mTimeLoc = GLES20.glGetUniformLocation ( mProgramHandle, "u_time" );
-        mColorLoc = GLES20.glGetUniformLocation ( mProgramHandle, "u_color" );
+        mTimeLoc = GLES20.glGetUniformLocation(mProgramHandle, "u_time");
+        mColorLoc = GLES20.glGetUniformLocation(mProgramHandle, "u_color");
         mSamplerLoc = GLES20.glGetUniformLocation(mProgramHandle, "s_texture");
         mVelocityLoc = GLES20.glGetUniformLocation(mProgramHandle, "u_velocity");
-        mCenterPositionLoc = GLES20.glGetUniformLocation ( mProgramHandle, "u_centerPosition" );
-
+        mCenterPositionLoc = GLES20.glGetUniformLocation(mProgramHandle, "u_centerPosition");
+        SensorManager senSensorManager = (SensorManager) mActivityContext.getSystemService(Context.SENSOR_SERVICE);
+        sensor = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        senSensorManager.registerListener(listener, senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER), SensorManager.SENSOR_DELAY_UI);
         // Fill in particle data array
         Random generator = new Random();
 
-        for ( int i = 0; i < NUM_PARTICLES; i++ )
-        {
+        for (int i = 0; i < NUM_PARTICLES; i++) {
             // Lifetime of particle
             mParticleData[i * 7 + 0] = generator.nextFloat();
 
@@ -177,12 +202,11 @@ public class Renderer implements GLSurfaceView.Renderer  {
         // Initialize time to cause reset on first update
         mTime = 1.0f;
 
-        mTextureId = loadTexture ( mActivityContext.getResources().openRawResource( R.raw.snowflake ) );
+        mTextureId = loadTexture(mActivityContext.getResources().openRawResource(R.raw.snowflake));
     }
 
     @Override
-    public void onSurfaceChanged(GL10 glUnused, int width, int height)
-    {
+    public void onSurfaceChanged(GL10 glUnused, int width, int height) {
         // Set the OpenGL viewport to the same size as the surface.
         GLES20.glViewport(0, 0, width, height);
 
@@ -204,8 +228,7 @@ public class Renderer implements GLSurfaceView.Renderer  {
     }
 
     @Override
-    public void onDrawFrame(GL10 glUnused)
-    {
+    public void onDrawFrame(GL10 glUnused) {
         update();
         // Set the viewport
         GLES20.glViewport(0, 0, mWidth, mHeight);
@@ -287,52 +310,68 @@ public class Renderer implements GLSurfaceView.Renderer  {
 
             GLES20.glUniform4f(mColorLoc, color[0], color[1], color[2], color[3]);
         }
+
         snow.update(deltaTime);
-        for (int i = 0; i < NUM_PARTICLES; i++)
-        {
-           mParticleData[i * 7 + 0] = snow.particles[i].timeLived;
-           mParticleData[i * 7 + 1] = snow.particles[i].position[0];
-           mParticleData[i * 7 + 2] = snow.particles[i].position[1];
-           mParticleData[i * 7 + 3] = snow.particles[i].position[2];
+        for (int i = 0; i < NUM_PARTICLES; i++) {
+            mParticleData[i * 7 + 0] = snow.particles[i].timeLived;
+            mParticleData[i * 7 + 1] = snow.particles[i].position[0];
+            mParticleData[i * 7 + 2] = snow.particles[i].position[1];
+            mParticleData[i * 7 + 3] = snow.particles[i].position[2];
         }
 
         // Load uniform time variable
-        GLES20.glUniform1f ( mTimeLoc, mTime );
+        GLES20.glUniform1f(mTimeLoc, mTime);
     }
 
     ///
     //  Load texture from resource
     //
-    private int loadTexture ( InputStream is )
-    {
+    private int loadTexture(InputStream is) {
         int[] textureId = new int[1];
         Bitmap bitmap;
         bitmap = BitmapFactory.decodeStream(is);
         byte[] buffer = new byte[bitmap.getWidth() * bitmap.getHeight() * 3];
 
-        for ( int y = 0; y < bitmap.getHeight(); y++ )
-            for ( int x = 0; x < bitmap.getWidth(); x++ )
-            {
+        for (int y = 0; y < bitmap.getHeight(); y++)
+            for (int x = 0; x < bitmap.getWidth(); x++) {
                 int pixel = bitmap.getPixel(x, y);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 0] = (byte)((pixel >> 16) & 0xFF);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 1] = (byte)((pixel >> 8) & 0xFF);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 2] = (byte)((pixel >> 0) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 3 + 0] = (byte) ((pixel >> 16) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 3 + 1] = (byte) ((pixel >> 8) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 3 + 2] = (byte) ((pixel >> 0) & 0xFF);
             }
 
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bitmap.getWidth() * bitmap.getHeight() * 3);
         byteBuffer.put(buffer).position(0);
 
-        GLES20.glGenTextures ( 1, textureId, 0 );
-        GLES20.glBindTexture ( GLES20.GL_TEXTURE_2D, textureId[0] );
+        GLES20.glGenTextures(1, textureId, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId[0]);
 
-        GLES20.glTexImage2D ( GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, bitmap.getWidth(), bitmap.getHeight(), 0,
-                GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, byteBuffer );
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, bitmap.getWidth(), bitmap.getHeight(), 0,
+                GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, byteBuffer);
 
-        GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR );
-        GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR );
-        GLES20.glTexParameteri ( GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE );
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
 
         return textureId[0];
     }
+
+    private SensorEventListener listener = new SensorEventListener() {
+        public void onSensorChanged(SensorEvent e) {
+            if (e.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                double netForce = e.values[0] * e.values[0];
+
+                netForce += e.values[1] * e.values[1];
+                netForce += e.values[2] * e.values[2];
+
+                snow.tilt = e.values;
+            }
+        }
+
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            // unused
+        }
+    };
 }
+
