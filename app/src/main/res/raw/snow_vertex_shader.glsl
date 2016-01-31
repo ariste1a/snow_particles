@@ -8,7 +8,6 @@ varying float v_lifetime;
 varying float v_velocity;
 void main()
 {
-    //gl_Position.y = a_endPosition.y;
     gl_Position.xyz = a_endPosition;
     gl_Position.w = 1.0;
     gl_PointSize = 30.0;

@@ -7,6 +7,7 @@ void main()
 {
   vec4 texColor;
   texColor = texture2D( s_texture, gl_PointCoord );
+  //gl_FragColor = texColor * vec4(255, 255, 255, 255);
   gl_FragColor = texColor;
   gl_FragColor.a *= v_lifetime;
 }

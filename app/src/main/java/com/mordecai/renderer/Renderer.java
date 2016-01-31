@@ -116,7 +116,7 @@ public class Renderer implements GLSurfaceView.Renderer {
     private int mHeight;
     private FloatBuffer mParticles;
 
-    private final int NUM_PARTICLES = 1000;
+    private final int NUM_PARTICLES = 5000;
     private final int PARTICLE_SIZE = 7;
 
     private final float[] mParticleData = new float[NUM_PARTICLES * PARTICLE_SIZE];
@@ -142,18 +142,19 @@ public class Renderer implements GLSurfaceView.Renderer {
 
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config) {
-//        // Set the background clear color to black.
-//        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-//
-//        // No culling of back faces
-//        GLES20.glDisable(GLES20.GL_CULL_FACE);
-//
-//        // No depth testing
-//        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-//
-//        // Enable blending
-//        GLES20.glEnable(GLES20.GL_BLEND);
-//        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE);
+        
+        //Set the background clear color to black.
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+
+         //No culling of back faces
+        GLES20.glDisable(GLES20.GL_CULL_FACE);
+
+         //No depth testing
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
+
+         //Enable blending
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE);
 
         final String vertexShader = getVertexShader();
         final String fragmentShader = getFragmentShader();
