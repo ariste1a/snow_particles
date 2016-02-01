@@ -264,7 +264,6 @@ public class Renderer implements GLSurfaceView.Renderer {
         // Blend particles
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
-        GLES20.glEnable(GLES20.GL_ALPHA_BITS);
 
         // Bind the texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -277,7 +276,6 @@ public class Renderer implements GLSurfaceView.Renderer {
         // Set the sampler texture unit to 0
         GLES20.glUniform1i(mSamplerLoc, 0);
         GLES20.glDrawArrays(GLES20.GL_POINTS, 0, NUM_PARTICLES);
-        GLES20.glDisable(GLES20.GL_ALPHA_BITS);
     }
 
     private void update() {

@@ -44,7 +44,7 @@ public class ParticleSystem
 
     public void update(float time)
     {
-        float tiltX = -(tilt[0]/1000);
+        float tiltX = -(tilt[0]/500);
         float[] acceleration = new float[]{tiltX, -0.001f, 0};
         for(int i = 0; i < numParticles; i++)
         {
