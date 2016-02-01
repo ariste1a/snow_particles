@@ -60,7 +60,7 @@ public class ParticleSystem
                 //float startingVelocity = Math.abs(rand.nextFloat() - 0.1f);
                 velocity  = new float[]{0,-0.01f,0};
                 float decay = rand.nextFloat()/1000.0f+0.003f;
-                position[0] = rand.nextFloat()-0.5f;
+                position[0] = rand.nextFloat()*2f - 1.0f;
                 position[1] = rand.nextFloat()+0.5f;
                 position[2] = rand.nextFloat()*10 - 10;
 
