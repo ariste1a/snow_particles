@@ -264,6 +264,7 @@ public class Renderer implements GLSurfaceView.Renderer {
         // Blend particles
         GLES20.glEnable(GLES20.GL_BLEND);
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE);
+        GLES20.glEnable(GLES20.GL_ALPHA_BITS);
 
         // Bind the texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -276,7 +277,7 @@ public class Renderer implements GLSurfaceView.Renderer {
         // Set the sampler texture unit to 0
         GLES20.glUniform1i(mSamplerLoc, 0);
         GLES20.glDrawArrays(GLES20.GL_POINTS, 0, NUM_PARTICLES);
-
+        GLES20.glDisable(GLES20.GL_ALPHA_BITS);
     }
 
     private void update() {
@@ -331,24 +332,26 @@ public class Renderer implements GLSurfaceView.Renderer {
         int[] textureId = new int[1];
         Bitmap bitmap;
         bitmap = BitmapFactory.decodeStream(is);
-        byte[] buffer = new byte[bitmap.getWidth() * bitmap.getHeight() * 3];
+        byte[] buffer = new byte[bitmap.getWidth() * bitmap.getHeight() * 4];
 
         for (int y = 0; y < bitmap.getHeight(); y++)
             for (int x = 0; x < bitmap.getWidth(); x++) {
                 int pixel = bitmap.getPixel(x, y);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 0] = (byte) ((pixel >> 16) & 0xFF);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 1] = (byte) ((pixel >> 8) & 0xFF);
-                buffer[(y * bitmap.getWidth() + x) * 3 + 2] = (byte) ((pixel >> 0) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 4 + 0] = (byte)((pixel >> 16) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 4 + 1] = (byte)((pixel >> 8) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 4 + 2] = (byte)((pixel >> 0) & 0xFF);
+                buffer[(y * bitmap.getWidth() + x) * 4 + 3] = (byte)((pixel >> 24) & 0xFF);
+
             }
 
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bitmap.getWidth() * bitmap.getHeight() * 3);
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bitmap.getWidth() * bitmap.getHeight() * 4);
         byteBuffer.put(buffer).position(0);
 
         GLES20.glGenTextures(1, textureId, 0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId[0]);
 
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, bitmap.getWidth(), bitmap.getHeight(), 0,
-                GLES20.GL_RGB, GLES20.GL_UNSIGNED_BYTE, byteBuffer);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, bitmap.getWidth(), bitmap.getHeight(), 0,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, byteBuffer);
 
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
